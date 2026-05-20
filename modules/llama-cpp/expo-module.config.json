@@ -1,0 +1,5 @@
+{
+  "name": "llama-cpp",
+  "version": "1.0.0",
+  "platforms": ["android"]
+}
