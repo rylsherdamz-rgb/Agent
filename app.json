@@ -25,17 +25,23 @@
       "edgeToEdgeEnabled": true,
       "package": "com.agent.app",
       "permissions": [
-        "INTERNET",
-        "ACCESS_NETWORK_STATE",
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "SCHEDULE_EXACT_ALARM",
-        "POST_NOTIFICATIONS",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "CAMERA",
-        "READ_CALENDAR",
-        "WRITE_CALENDAR"
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.WAKE_LOCK",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO"
       ]
     },
     "web": {
@@ -73,9 +79,11 @@
       "expo-media-library"
     ],
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "agent-app"
+        "projectId": "547219ae-c082-4371-92da-2a8957ac1412"
       }
-    }
+    },
+    "owner": "3x656"
   }
 }
