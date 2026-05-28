@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { EmailDB, EmailAccountDB, SocialDB } from '../services/database';
+import { BackendAPI, type BackendSummary } from '../services/api';
+import { SettingsStorage } from '../services/storage';
 import { v4 as uuid } from 'uuid';
 import type { Email, EmailAccount, SocialPost } from '../types';
 
@@ -13,11 +15,13 @@ interface InboxStore {
   isLoading: boolean;
   unreadCount: number;
   error: string | null;
+  backendSummaries: BackendSummary[];
 
   loadEmails: (accountId?: string) => Promise<void>;
   loadAccounts: () => Promise<void>;
   loadSocialPosts: (platform?: string) => Promise<void>;
   loadUnifiedInbox: () => Promise<void>;
+  loadBackendSummaries: () => Promise<void>;
   markEmailRead: (id: string) => Promise<void>;
   markSocialRead: (id: string) => Promise<void>;
   addAccount: (account: Partial<EmailAccount>) => Promise<void>;
@@ -32,6 +36,7 @@ export const useInboxStore = create<InboxStore>((set, get) => ({
   accounts: [],
   socialPosts: [],
   unifiedInbox: [],
+  backendSummaries: [],
   isLoading: false,
   unreadCount: 0,
   error: null,
@@ -107,6 +112,22 @@ export const useInboxStore = create<InboxStore>((set, get) => ({
     } catch (err) {
       set({ error: (err as Error).message, isLoading: false });
     }
+  },
+
+  loadBackendSummaries: async () => {
+    const settings = SettingsStorage.get();
+    if (!settings?.backendUrl) return;
+
+    try {
+      const { data } = await BackendAPI.getSummary();
+      if (data) {
+        const unreadSummaries = data.filter(s => !s.isRead);
+        set((state) => ({
+          backendSummaries: data,
+          unreadCount: state.unreadCount + unreadSummaries.length,
+        }));
+      }
+    } catch {}
   },
 
   markEmailRead: async (id) => {

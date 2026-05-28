@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { llmService } from '../services/llmService';
+import { BackendAPI } from '../services/api';
+import { SettingsStorage } from '../services/storage';
 import { v4 as uuid } from 'uuid';
 import type { AgentMessage, AgentConversation } from '../types';
 
@@ -97,15 +99,43 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     conversation.messages.push(userMessage);
 
     try {
-      const agentMessage = await llmService.generateAgentResponse(
-        content,
-        conversation.messages.slice(0, -1),
-        (token) => {
-          set((state) => ({
-            streamingMessage: state.streamingMessage + token,
-          }));
+      const settings = SettingsStorage.get();
+      let agentMessage: AgentMessage;
+
+      if (settings?.backendUrl && settings?.backendToken) {
+        const { data, error } = await BackendAPI.askAI(content);
+        if (data && !error) {
+          agentMessage = {
+            id: uuid(),
+            role: 'agent',
+            content: data.answer,
+            toolCalls: null,
+            toolResults: null,
+            timestamp: Date.now(),
+            isStreaming: false,
+          };
+        } else {
+          agentMessage = await llmService.generateAgentResponse(
+            content,
+            conversation.messages.slice(0, -1),
+            (token) => {
+              set((state) => ({
+                streamingMessage: state.streamingMessage + token,
+              }));
+            }
+          );
         }
-      );
+      } else {
+        agentMessage = await llmService.generateAgentResponse(
+          content,
+          conversation.messages.slice(0, -1),
+          (token) => {
+            set((state) => ({
+              streamingMessage: state.streamingMessage + token,
+            }));
+          }
+        );
+      }
 
       agentMessage.id = uuid();
       conversation.messages.push(agentMessage);

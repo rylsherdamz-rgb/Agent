@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,9 @@ import { CalendarAgendaView } from '../../src/components/CalendarAgendaView';
 import { CalendarDayView } from '../../src/components/CalendarDayView';
 import { CalendarWeekView } from '../../src/components/CalendarWeekView';
 import { CalendarMonthView } from '../../src/components/CalendarMonthView';
+import { EventDetailSheet } from '../../src/components/EventDetailSheet';
 import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } from '../../src/utils/date';
-import type { CalendarViewMode } from '../../src/types';
+import type { CalendarViewMode, CalendarEvent } from '../../src/types';
 
 export default function CalendarScreen() {
   const colorScheme = useColorScheme();
@@ -26,9 +27,16 @@ export default function CalendarScreen() {
     viewMode,
     currentDate,
     loadEventsForView,
+    addEvent,
+    updateEvent,
+    deleteEvent,
     setViewMode,
     setCurrentDate,
   } = useCalendarStore();
+
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [isNewEvent, setIsNewEvent] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   useEffect(() => {
     loadEventsForView();
@@ -67,6 +75,33 @@ export default function CalendarScreen() {
   const goToToday = useCallback(() => {
     setCurrentDate(new Date());
   }, []);
+
+  const handleAddEvent = useCallback(() => {
+    setIsNewEvent(true);
+    setSelectedEvent(null);
+    setSheetVisible(true);
+  }, []);
+
+  const handleEventPress = useCallback((event: CalendarEvent) => {
+    setIsNewEvent(false);
+    setSelectedEvent(event);
+    setSheetVisible(true);
+  }, []);
+
+  const handleCreateEvent = useCallback(async (partial: Partial<CalendarEvent>) => {
+    await addEvent(partial);
+    loadEventsForView();
+  }, [addEvent, loadEventsForView]);
+
+  const handleUpdateEvent = useCallback(async (id: string, changes: Partial<CalendarEvent>) => {
+    await updateEvent(id, changes);
+    loadEventsForView();
+  }, [updateEvent, loadEventsForView]);
+
+  const handleDeleteEvent = useCallback(async (id: string) => {
+    await deleteEvent(id);
+    loadEventsForView();
+  }, [deleteEvent, loadEventsForView]);
 
   const views: { key: CalendarViewMode; label: string }[] = [
     { key: 'month', label: 'Month' },
@@ -128,6 +163,7 @@ export default function CalendarScreen() {
 
           <TouchableOpacity
             style={[styles.addEventBtn, { backgroundColor: colors.primary }]}
+            onPress={handleAddEvent}
           >
             <Text style={styles.addEventBtnText}>+</Text>
           </TouchableOpacity>
@@ -139,14 +175,14 @@ export default function CalendarScreen() {
           <CalendarDayView
             date={currentDate}
             events={events}
-            onEventPress={() => {}}
+            onEventPress={handleEventPress}
           />
         )}
         {viewMode === 'week' && (
           <CalendarWeekView
             date={currentDate}
             events={events}
-            onEventPress={() => {}}
+            onEventPress={handleEventPress}
           />
         )}
         {viewMode === 'month' && (
@@ -157,16 +193,29 @@ export default function CalendarScreen() {
               setCurrentDate(date);
               setViewMode('day');
             }}
-            onEventPress={() => {}}
+            onEventPress={handleEventPress}
           />
         )}
         {viewMode === 'agenda' && (
           <CalendarAgendaView
             events={events}
-            onEventPress={() => {}}
+            onEventPress={handleEventPress}
           />
         )}
       </View>
+
+      <EventDetailSheet
+        event={selectedEvent}
+        visible={sheetVisible}
+        isNew={isNewEvent}
+        onClose={() => {
+          setSheetVisible(false);
+          setSelectedEvent(null);
+        }}
+        onCreate={handleCreateEvent}
+        onUpdate={handleUpdateEvent}
+        onDelete={handleDeleteEvent}
+      />
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { SettingsStorage, ModelStorage } from '../services/storage';
+import { BackendAPI } from '../services/api';
 import { DEFAULT_MODEL, BACKGROUND_SYNC_INTERVALS } from '../utils/constants';
 import type { AppSettings } from '../types';
 
@@ -71,6 +72,11 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
     set((state) => {
       const updated = { ...state.settings, ...partial };
       SettingsStorage.set(updated);
+
+      if (partial.backendUrl) {
+        BackendAPI.setupBackend(partial.backendUrl, partial.backendToken || updated.backendToken || '');
+      }
+
       return { settings: updated };
     });
   },

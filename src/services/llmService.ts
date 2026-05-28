@@ -1,6 +1,7 @@
 import { ConversationDB } from './database';
 import { ModelStorage } from './storage';
 import { AGENT_SYSTEM_PROMPT, DEFAULT_MODEL } from '../utils/constants';
+import { LlamaCpp } from '../../modules/llama-cpp/src';
 import type { AgentMessage, AgentConversation, ToolCall, ToolResult } from '../types';
 
 export interface LlamaInferenceOptions {
@@ -24,13 +25,8 @@ export interface LlamaInferenceResponse {
 class LLMService {
   private static instance: LLMService;
   private modelLoaded = false;
-  private isAndroid = false;
 
-  private constructor() {
-    try {
-      this.isAndroid = true;
-    } catch {}
-  }
+  private constructor() {}
 
   static getInstance(): LLMService {
     if (!LLMService.instance) {
@@ -52,14 +48,17 @@ class LLMService {
       const path = modelPath || ModelStorage.getModelInfo().path;
       if (!path) return false;
 
-      this.modelLoaded = true;
-      ModelStorage.setModelInfo({
-        name: DEFAULT_MODEL,
-        path,
-        downloaded: true,
-      });
+      this.modelLoaded = await LlamaCpp.loadModel(path);
 
-      return true;
+      if (this.modelLoaded) {
+        ModelStorage.setModelInfo({
+          name: DEFAULT_MODEL,
+          path,
+          downloaded: true,
+        });
+      }
+
+      return this.modelLoaded;
     } catch (err) {
       console.error('Failed to load model:', err);
       return false;
@@ -67,12 +66,18 @@ class LLMService {
   }
 
   async infer(options: LlamaInferenceOptions): Promise<LlamaInferenceResponse> {
-    if (!this.modelLoaded || !this.isAndroid) {
+    if (!this.modelLoaded) {
       return this.mockInference(options);
     }
 
     try {
-      const response = await this.nativeInfer(options);
+      const response = await LlamaCpp.infer(
+        options.prompt,
+        options.maxTokens ?? 1024,
+        options.temperature ?? 0.7,
+        options.topP ?? 0.9,
+        options.stopTokens ?? []
+      );
 
       if (response.finishReason === 'error') {
         return this.mockInference(options);
@@ -82,19 +87,6 @@ class LLMService {
     } catch {
       return this.mockInference(options);
     }
-  }
-
-  private async nativeInfer(options: LlamaInferenceOptions): Promise<LlamaInferenceResponse> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          text: 'I am processing your request offline on your device.',
-          tokensGenerated: 50,
-          tokensPerSecond: 2.5,
-          finishReason: 'stop',
-        });
-      }, 500);
-    });
   }
 
   private async mockInference(options: LlamaInferenceOptions): Promise<LlamaInferenceResponse> {

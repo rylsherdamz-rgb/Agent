@@ -2,12 +2,13 @@ import { requireNativeModule } from 'expo-modules-core';
 
 interface LlamaCppModule {
   loadModel(path: string): Promise<boolean>;
-  infer(prompt: string, options?: {
-    maxTokens?: number;
-    temperature?: number;
-    topP?: number;
-    stopTokens?: string[];
-  }): Promise<{
+  infer(
+    prompt: string,
+    maxTokens: number,
+    temperature: number,
+    topP: number,
+    stopTokens: string[]
+  ): Promise<{
     text: string;
     tokensGenerated: number;
     tokensPerSecond: number;
@@ -29,7 +30,7 @@ const mockModule: LlamaCppModule = {
     console.log('[LlamaCpp Mock] Model loaded:', _path);
     return true;
   },
-  infer: async (prompt) => {
+  infer: async (prompt, _maxTokens, _temperature, _topP, _stopTokens) => {
     const p = prompt.toLowerCase();
     let text = 'I am the offline agent running on your device. How can I help you?';
 
