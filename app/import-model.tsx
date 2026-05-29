@@ -13,11 +13,11 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../src/utils/colors';
+import { Colors } from '../src/utils/colors';
 import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
-import { LlamaCpp } from '../../modules/llama-cpp/src/index';
-import { useSettingsStore } from '../../src/stores/settingsStore';
+import { LlamaCpp } from '../modules/llama-cpp/src/index';
+import { useSettingsStore } from '../src/stores/settingsStore';
 
 const MODEL_DIR = `${FileSystem.documentDirectory}models`;
 
