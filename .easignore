@@ -1,0 +1,9 @@
+# Ignore large model files
+data/models/*.gguf
+
+# Ignore common development files
+.git
+node_modules
+.expo
+*.log
+.DS_Store
