@@ -9,4 +9,6 @@ add_library(llama-native SHARED
 
 find_library(log-lib log)
 
-target_link_libraries(llama-native ${log-lib})
+target_include_directories(llama-native PRIVATE ${CMAKE_SOURCE_DIR})
+
+target_link_libraries(llama-native ${log-lib} android)
