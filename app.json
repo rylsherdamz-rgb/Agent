@@ -76,7 +76,8 @@
       "expo-background-fetch",
       "expo-document-picker",
       "expo-file-system",
-      "expo-media-library"
+      "expo-media-library",
+      "./modules/llama-cpp/app.plugin.js"
     ],
     "extra": {
       "router": {},

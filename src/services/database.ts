@@ -395,16 +395,16 @@ export const TaskDB = {
   async getAll(filter?: Partial<Record<string, unknown>>): Promise<Task[]> {
     const database = await getDatabase();
     let query = `SELECT * FROM ${DB_TABLES.TASKS}`;
-    const params: unknown[] = [];
+    const params: (string | number | null)[] = [];
     const conditions: string[] = [];
 
     if (filter?.status && filter.status !== 'all') {
       conditions.push(`status = ?`);
-      params.push(filter.status);
+      params.push(filter.status as string);
     }
     if (filter?.priority && filter.priority !== 'all') {
       conditions.push(`priority = ?`);
-      params.push(filter.priority);
+      params.push(filter.priority as string);
     }
 
     if (conditions.length > 0) {
@@ -412,7 +412,7 @@ export const TaskDB = {
     }
     query += ` ORDER BY sort_order ASC, due_date ASC NULLS LAST, priority DESC`;
 
-    const rows = await database.getAllAsync(query, params);
+    const rows = await database.getAllAsync(query, params) as Record<string, unknown>[];
     const tasks = rows.map(rowToTask);
 
     for (const task of tasks) {
@@ -441,7 +441,7 @@ export const TaskDB = {
     const row = taskToRow(task);
     const keys = Object.keys(row);
     const placeholders = keys.map(() => '?').join(', ');
-    const values = keys.map(k => (row as Record<string, unknown>)[k]);
+    const values = keys.map(k => (row as Record<string, unknown>)[k]).filter(v => v !== undefined) as (string | number | null)[];
     await database.runAsync(
       `INSERT OR REPLACE INTO ${DB_TABLES.TASKS} (${keys.join(', ')}) VALUES (${placeholders})`,
       values
@@ -517,7 +517,7 @@ export const EventDB = {
     const rows = await database.getAllAsync(
       `SELECT * FROM ${DB_TABLES.EVENTS} WHERE start_date < ? AND end_date > ? ORDER BY start_date ASC`,
       [end, start]
-    );
+    ) as Record<string, unknown>[];
     const events = rows.map(rowToEvent);
     for (const event of events) {
       event.attendees = await AttendeeDB.getByEventId(event.id);
@@ -544,7 +544,7 @@ export const EventDB = {
     const row = eventToRow(event);
     const keys = Object.keys(row);
     const placeholders = keys.map(() => '?').join(', ');
-    const values = keys.map(k => (row as Record<string, unknown>)[k]);
+    const values = keys.map(k => (row as Record<string, unknown>)[k]).filter(v => v !== undefined) as (string | number | null)[];
     await database.runAsync(
       `INSERT OR REPLACE INTO ${DB_TABLES.EVENTS} (${keys.join(', ')}) VALUES (${placeholders})`,
       values
@@ -597,7 +597,7 @@ export const EmailDB = {
     const rows = await database.getAllAsync(
       `SELECT * FROM ${DB_TABLES.EMAILS} WHERE account_id = ? ORDER BY date DESC LIMIT ? OFFSET ?`,
       [accountId, limit, offset]
-    );
+    ) as Record<string, unknown>[];
     return Promise.all(
       rows.map(async (row) => {
         const email = rowToEmail(row);
@@ -620,7 +620,7 @@ export const EmailDB = {
     const row = emailToRow(email);
     const keys = Object.keys(row);
     const placeholders = keys.map(() => '?').join(', ');
-    const values = keys.map(k => (row as Record<string, unknown>)[k]);
+    const values = keys.map(k => (row as Record<string, unknown>)[k]).filter(v => v !== undefined) as (string | number | null)[];
     await database.runAsync(
       `INSERT OR REPLACE INTO ${DB_TABLES.EMAILS} (${keys.join(', ')}) VALUES (${placeholders})`,
       values
@@ -644,7 +644,7 @@ export const EmailAccountDB = {
     const database = await getDatabase();
     const rows = await database.getAllAsync(
       `SELECT * FROM ${DB_TABLES.EMAIL_ACCOUNTS}`
-    );
+    ) as Record<string, unknown>[];
     return rows.map(rowToAccount);
   },
 
@@ -653,7 +653,7 @@ export const EmailAccountDB = {
     const row = accountToRow(account);
     const keys = Object.keys(row);
     const placeholders = keys.map(() => '?').join(', ');
-    const values = keys.map(k => (row as Record<string, unknown>)[k]);
+    const values = keys.map(k => (row as Record<string, unknown>)[k]).filter(v => v !== undefined) as (string | number | null)[];
     await database.runAsync(
       `INSERT OR REPLACE INTO ${DB_TABLES.EMAIL_ACCOUNTS} (${keys.join(', ')}) VALUES (${placeholders})`,
       values
@@ -677,13 +677,13 @@ export const SocialDB = {
       const rows = await database.getAllAsync(
         `SELECT * FROM ${DB_TABLES.SOCIAL_POSTS} WHERE platform = ? ORDER BY date DESC LIMIT ? OFFSET ?`,
         [platform, limit, offset]
-      );
+      ) as Record<string, unknown>[];
       return rows.map(rowToSocial);
     }
     const rows = await database.getAllAsync(
       `SELECT * FROM ${DB_TABLES.SOCIAL_POSTS} ORDER BY date DESC LIMIT ? OFFSET ?`,
       [limit, offset]
-    );
+    ) as Record<string, unknown>[];
     return rows.map(rowToSocial);
   },
 
@@ -700,7 +700,7 @@ export const SocialDB = {
     const row = socialToRow(post);
     const keys = Object.keys(row);
     const placeholders = keys.map(() => '?').join(', ');
-    const values = keys.map(k => (row as Record<string, unknown>)[k]);
+    const values = keys.map(k => (row as Record<string, unknown>)[k]).filter(v => v !== undefined) as (string | number | null)[];
     await database.runAsync(
       `INSERT OR REPLACE INTO ${DB_TABLES.SOCIAL_POSTS} (${keys.join(', ')}) VALUES (${placeholders})`,
       values

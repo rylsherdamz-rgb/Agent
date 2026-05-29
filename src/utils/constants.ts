@@ -57,8 +57,9 @@ export const CALENDAR_COLORS = [
   '#1E88E5', '#E53935', '#FDD835', '#7CB342',
 ];
 
-export const DEFAULT_MODEL = 'qwen2-1.5b-instruct-q4_k_m.gguf';
+export const DEFAULT_MODEL = 'qwen2.5-1.5b-instruct-q4_k_m.gguf';
 export const MODEL_DOWNLOAD_URL = 'https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf';
+export const MODEL_PATH = '/data/models/qwen2.5-1.5b-instruct-q4_k_m.gguf';
 
 export const AGENT_SYSTEM_PROMPT = `You are an offline AI assistant that helps manage tasks, calendar, emails, and social media.
 

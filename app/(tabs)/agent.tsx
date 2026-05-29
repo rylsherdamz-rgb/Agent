@@ -9,12 +9,22 @@ import {
   useColorScheme,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  ZoomIn,
+} from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/utils/colors';
 import { useAgentStore } from '../../src/stores/agentStore';
 import { useSettingsStore } from '../../src/stores/settingsStore';
 import { formatRelativeDate } from '../../src/utils/date';
+import { nlpSkills } from '../../src/services/nlpSkills';
 import type { AgentMessage } from '../../src/types';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function AgentScreen() {
   const colorScheme = useColorScheme();
@@ -44,12 +54,28 @@ export default function AgentScreen() {
   const [modelStatus, setModelStatus] = useState<'unloaded' | 'loading' | 'loaded'>(
     settings.modelDownloaded ? 'unloaded' : 'unloaded'
   );
+  const [suggestions, setSuggestions] = useState<Array<{ label: string; action: string }>>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     loadConversations();
   }, []);
+
+  useEffect(() => {
+    if (inputText.trim().length > 3) {
+      setIsAnalyzing(true);
+      const timeout = setTimeout(async () => {
+        const suggs = await nlpSkills.suggestActions(inputText);
+        setSuggestions(suggs);
+        setIsAnalyzing(false);
+      }, 300);
+      return () => clearTimeout(timeout);
+    } else {
+      setSuggestions([]);
+    }
+  }, [inputText]);
 
   const activeConversation = getActiveConversation();
   const messages = activeConversation?.messages || [];
@@ -89,27 +115,40 @@ export default function AgentScreen() {
     await createConversation();
   };
 
-  const renderMessage = ({ item }: { item: AgentMessage }) => {
+  const renderMessage = ({ item, index }: { item: AgentMessage; index: number }) => {
     const isUser = item.role === 'user';
     const isTool = item.role === 'tool';
 
     if (isTool) {
       return (
-        <View style={[styles.toolBubble, { backgroundColor: colors.surfaceVariant }]}>
-          <Text style={[styles.toolLabel, { color: colors.textTertiary }]}>
-            TOOL: {item.content.substring(0, 80)}
-          </Text>
-        </View>
+        <Animated.View
+          entering={FadeInDown.duration(300).delay(index * 50)}
+          style={[styles.toolBubble, { backgroundColor: colors.surfaceVariant }]}
+        >
+          <View style={styles.toolRow}>
+            <Ionicons name="code-slash-outline" size={16} color={colors.textTertiary} />
+            <Text style={[styles.toolLabel, { color: colors.textTertiary }]}>
+              TOOL: {item.content.substring(0, 80)}
+            </Text>
+          </View>
+        </Animated.View>
       );
     }
 
     return (
-      <View
+      <Animated.View
+        key={item.id}
+        entering={FadeInDown.duration(300).delay(index * 50)}
         style={[
           styles.messageRow,
           isUser ? styles.userRow : styles.agentRow,
         ]}
       >
+        {!isUser && (
+          <View style={[styles.avatar, { backgroundColor: colors.primary + '20' }]}>
+            <Ionicons name="sparkles" size={16} color={colors.primary} />
+          </View>
+        )}
         <View
           style={[
             styles.bubble,
@@ -126,16 +165,26 @@ export default function AgentScreen() {
           >
             {item.content}
           </Text>
-          <Text
-            style={[
-              styles.bubbleTime,
-              { color: isUser ? 'rgba(255,255,255,0.7)' : colors.textTertiary },
-            ]}
-          >
-            {formatRelativeDate(item.timestamp)}
-          </Text>
+          <View style={styles.bubbleTimeRow}>
+            <Text
+              style={[
+                styles.bubbleTime,
+                { color: isUser ? 'rgba(255,255,255,0.7)' : colors.textTertiary },
+              ]}
+            >
+              {formatRelativeDate(item.timestamp)}
+            </Text>
+            {isUser && (
+              <Ionicons name="checkmark-done" size={14} color="rgba(255,255,255,0.7)" />
+            )}
+          </View>
         </View>
-      </View>
+        {isUser && (
+          <View style={[styles.avatar, { backgroundColor: colors.success + '20' }]}>
+            <Ionicons name="person" size={16} color={colors.success} />
+          </View>
+        )}
+      </Animated.View>
     );
   };
 
@@ -181,12 +230,15 @@ export default function AgentScreen() {
 
   const renderEmpty = () => (
     <View style={styles.emptyState}>
-      <Text style={[styles.emptyIcon]}>?</Text>
+      <Animated.View entering={ZoomIn.duration(800)} style={[styles.emptyIconContainer, { backgroundColor: colors.primary + '15' }]}>
+        <Ionicons name="sparkles" size={64} color={colors.primary} />
+      </Animated.View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>
         Offline AI Agent
       </Text>
       <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-        Ask me to create tasks, check your schedule, summarize emails, or review social media.
+        I can help manage your tasks, calendar, emails, and social media.{'\n\n'}
+        Ask me anything — I run entirely on your device.
       </Text>
       <View style={styles.suggestions}>
         {[
@@ -195,18 +247,21 @@ export default function AgentScreen() {
           'Summarize my inbox',
           'Create a task for tomorrow',
           'What social updates do I have?',
-        ].map((suggestion) => (
-          <TouchableOpacity
+        ].map((suggestion, index) => (
+          <AnimatedTouchableOpacity
             key={suggestion}
+            entering={FadeInDown.delay(index * 100).duration(400)}
             style={[styles.suggestionChip, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}
             onPress={() => {
               setInputText(suggestion);
             }}
+            activeOpacity={0.7}
           >
+            <Ionicons name="bulb-outline" size={16} color={colors.primary} />
             <Text style={[styles.suggestionText, { color: colors.textSecondary }]}>
               {suggestion}
             </Text>
-          </TouchableOpacity>
+          </AnimatedTouchableOpacity>
         ))}
       </View>
     </View>
@@ -222,7 +277,7 @@ export default function AgentScreen() {
         {renderHeader()}
         <View style={styles.emptyContainer}>
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyIcon]}>A</Text>
+            <Ionicons name="sparkles" size={56} color={colors.primary} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
               Offline AI Agent
             </Text>
@@ -238,6 +293,30 @@ export default function AgentScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        {suggestions.length > 0 && (
+          <View style={styles.suggestionsContainer}>
+            {suggestions.map((suggestion, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.suggestionItem, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}
+                onPress={() => {
+                  try {
+                    const action = JSON.parse(suggestion.action);
+                    if (action.type === 'create_task') {
+                      setInputText(`Create task: ${action.title}`);
+                    }
+                  } catch {
+                    setInputText(suggestion.label);
+                  }
+                  setSuggestions([]);
+                }}
+              >
+                <Ionicons name="bulb-outline" size={18} color={colors.primary} />
+                <Text style={[styles.suggestionText, { color: colors.text }]}>{suggestion.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </KeyboardAvoidingView>
     );
   }
@@ -304,9 +383,12 @@ export default function AgentScreen() {
 
       {isGenerating && streamingMessage ? (
         <View style={[styles.streamingBar, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.streamingText, { color: colors.textSecondary }]}>
-            {streamingMessage.substring(streamingMessage.length - 60)}
-          </Text>
+          <View style={styles.streamingRow}>
+            <Ionicons name="sparkles" size={16} color={colors.primary} />
+            <Text style={[styles.streamingText, { color: colors.textSecondary }]}>
+              {streamingMessage.substring(streamingMessage.length - 60)}
+            </Text>
+          </View>
         </View>
       ) : null}
 
@@ -317,46 +399,45 @@ export default function AgentScreen() {
       )}
 
       <View style={[styles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.surfaceVariant,
-              color: colors.text,
-            },
-          ]}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder={isModelLoaded ? 'Message the agent...' : 'Type a message...'}
-          placeholderTextColor={colors.textTertiary}
-          multiline
-          maxLength={2000}
-          editable={!isGenerating}
-          onSubmitEditing={handleSend}
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            {
-              backgroundColor:
-                inputText.trim() && !isGenerating
-                  ? colors.primary
-                  : colors.surfaceVariant,
-            },
-          ]}
-          onPress={handleSend}
-          disabled={!inputText.trim() || isGenerating}
-        >
-          <Text
-            style={{
-              color: inputText.trim() && !isGenerating ? '#fff' : colors.textTertiary,
-              fontSize: 16,
-              fontWeight: '700',
-            }}
+        <View style={[styles.inputContainer, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: 'transparent',
+                color: colors.text,
+              },
+            ]}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder={isModelLoaded ? 'Message the agent...' : 'Type a message...'}
+            placeholderTextColor={colors.textTertiary}
+            multiline
+            maxLength={2000}
+            editable={!isGenerating}
+            onSubmitEditing={handleSend}
+          />
+          <AnimatedTouchableOpacity
+            style={[
+              styles.sendButton,
+              {
+                backgroundColor:
+                  inputText.trim() && !isGenerating
+                    ? colors.primary
+                    : colors.textTertiary + '40',
+              },
+            ]}
+            onPress={handleSend}
+            disabled={!inputText.trim() || isGenerating}
+            activeOpacity={0.8}
           >
-            {isGenerating ? '...' : '>'}
-          </Text>
-        </TouchableOpacity>
+            <Ionicons
+              name={isGenerating ? 'hourglass' : 'send'}
+              size={20}
+              color={inputText.trim() && !isGenerating ? '#fff' : colors.textTertiary}
+            />
+          </AnimatedTouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -366,59 +447,80 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   emptyContainer: { flex: 1 },
   emptyListContent: { flexGrow: 1 },
-  listContent: { paddingBottom: 16 },
+  listContent: { paddingBottom: 16, paddingHorizontal: 16 },
   loadBanner: {
     marginHorizontal: 16,
     marginVertical: 8,
-    padding: 12,
-    borderRadius: 10,
+    padding: 14,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   loadBannerText: {
-    fontSize: 13,
-    fontWeight: '500',
-    lineHeight: 18,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+    flex: 1,
   },
   chatSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingRight: 16,
     borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
   chatChipList: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     gap: 8,
   },
   chatChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
   },
   chatChipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     maxWidth: 120,
   },
   newChatBtn: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
+    color: '#1A73E8',
   },
   messageRow: {
-    paddingHorizontal: 16,
-    marginVertical: 3,
+    flexDirection: 'row',
+    marginVertical: 6,
+    gap: 10,
   },
   userRow: {
-    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
   },
   agentRow: {
-    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-end',
   },
   bubble: {
-    maxWidth: '80%',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 16,
+    maxWidth: '75%',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   userBubble: {
     borderBottomRightRadius: 4,
@@ -428,61 +530,96 @@ const styles = StyleSheet.create({
   },
   bubbleText: {
     fontSize: 15,
-    lineHeight: 21,
+    lineHeight: 22,
+  },
+  bubbleTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
   },
   bubbleTime: {
-    fontSize: 10,
-    marginTop: 4,
-    textAlign: 'right',
-  },
-  toolBubble: {
-    alignSelf: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginVertical: 4,
-  },
-  toolLabel: {
     fontSize: 11,
     fontWeight: '500',
   },
+  toolBubble: {
+    alignSelf: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginVertical: 6,
+    maxWidth: '90%',
+  },
+  toolRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  toolLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+  },
   streamingBar: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 14,
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+  streamingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
   },
   streamingText: {
-    fontSize: 13,
+    fontSize: 14,
     fontStyle: 'italic',
+    flex: 1,
   },
   errorBar: {
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingVertical: 8,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   errorText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
   },
   inputBar: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+  },
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 12,
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderTopWidth: 1,
-    gap: 8,
+    gap: 12,
   },
   input: {
     flex: 1,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 10,
     fontSize: 15,
     maxHeight: 120,
+    paddingVertical: 8,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -493,45 +630,67 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingBottom: 60,
   },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
   emptyIcon: {
     fontSize: 56,
     marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     marginBottom: 12,
+    textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
+    lineHeight: 24,
+    marginBottom: 32,
+    color: '#80868B',
   },
   suggestions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
+    maxWidth: 500,
   },
   suggestionChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
     borderWidth: 1,
   },
   suggestionText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
   },
   startButton: {
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-    borderRadius: 24,
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   startButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
   },
 });

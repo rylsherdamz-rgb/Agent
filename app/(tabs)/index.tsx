@@ -8,13 +8,20 @@ import {
   useColorScheme,
   RefreshControl,
 } from 'react-native';
-import { Link } from 'expo-router';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  Layout,
+} from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/utils/colors';
 import { useTaskStore } from '../../src/stores/taskStore';
 import { FilterBar } from '../../src/components/FilterBar';
 import { TaskCard } from '../../src/components/TaskCard';
 import { TaskDetailSheet } from '../../src/components/TaskDetailSheet';
 import { isToday, formatDate } from '../../src/utils/date';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function TaskBoardScreen() {
   const colorScheme = useColorScheme();
@@ -70,7 +77,7 @@ export default function TaskBoardScreen() {
   const summaryStats = `${filteredTasks.length} tasks · ${completedCount} done${overdue.length > 0 ? ` · ${overdue.length} overdue` : ''}`;
 
   const renderHeader = () => (
-    <View>
+    <Animated.View entering={FadeInDown.duration(600)}>
       <FilterBar
         filter={filter}
         onFilterChange={setFilter}
@@ -78,82 +85,130 @@ export default function TaskBoardScreen() {
         completedTasks={completedCount}
       />
 
-      <View style={[styles.summaryRow, { borderBottomColor: colors.borderLight }]}>
-        <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
-          {summaryStats}
-        </Text>
-        <TouchableOpacity
+      {/* Quick Stats Row */}
+      <View style={[styles.statsRow, { borderBottomColor: colors.borderLight }]}>
+        <View style={[styles.statItem, { backgroundColor: colors.surfaceVariant }]}>
+          <Ionicons name="list-outline" size={20} color={colors.primary} />
+          <Text style={[styles.statValue, { color: colors.text }]}>
+            {filteredTasks.length}
+          </Text>
+          <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Total</Text>
+        </View>
+        <View style={[styles.statItem, { backgroundColor: colors.surfaceVariant }]}>
+          <Ionicons name="checkmark-circle-outline" size={20} color={colors.success} />
+          <Text style={[styles.statValue, { color: colors.text }]}>
+            {completedCount}
+          </Text>
+          <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Done</Text>
+        </View>
+        <View style={[styles.statItem, { backgroundColor: colors.surfaceVariant }]}>
+          <Ionicons name="time-outline" size={20} color={colors.error} />
+          <Text style={[styles.statValue, { color: colors.text }]}>
+            {overdue.length}
+          </Text>
+          <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Overdue</Text>
+        </View>
+        <AnimatedTouchableOpacity
           style={[styles.addButton, { backgroundColor: colors.primary }]}
           onPress={() => addTask({ title: 'New Task' })}
+          activeOpacity={0.8}
         >
-          <Text style={styles.addButtonText}>+ New</Text>
-        </TouchableOpacity>
+          <Ionicons name="add" size={24} color="#fff" />
+        </AnimatedTouchableOpacity>
       </View>
 
       {overdue.length > 0 && (
-        <View style={[styles.overdueBanner, { backgroundColor: colors.error + '12' }]}>
+        <Animated.View
+          entering={FadeIn.duration(400)}
+          style={[styles.overdueBanner, { backgroundColor: colors.error + '12' }]}
+        >
+          <Ionicons name="alert-circle-outline" size={20} color={colors.error} />
           <Text style={[styles.overdueText, { color: colors.error }]}>
             {overdue.length} overdue task{overdue.length > 1 ? 's' : ''}
           </Text>
-        </View>
+        </Animated.View>
       )}
 
       {dueToday.length > 0 && (
-        <View style={[styles.todaySection]}>
-          <Text style={[styles.sectionHeader, { color: colors.text }]}>
-            Today
-          </Text>
-          {dueToday.map((task) => (
-            <TaskCard
+        <Animated.View entering={FadeIn.delay(200).duration(400)} style={styles.todaySection}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="today-outline" size={18} color={colors.primary} />
+            <Text style={[styles.sectionHeader, { color: colors.text }]}>
+              Today
+            </Text>
+          </View>
+          {dueToday.map((task, index) => (
+            <Animated.View
               key={task.id}
-              task={task}
-              compact
-              onPress={() => handleTaskPress(task)}
-              onToggleComplete={() => handleToggleComplete(task.id)}
-            />
+              entering={FadeInDown.delay(index * 50).duration(300)}
+            >
+              <TaskCard
+                task={task}
+                compact
+                onPress={() => handleTaskPress(task)}
+                onToggleComplete={() => handleToggleComplete(task.id)}
+              />
+            </Animated.View>
           ))}
-        </View>
+        </Animated.View>
       )}
-    </View>
+    </Animated.View>
   );
 
   if (tasks.length === 0 && !isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Animated.View
+        style={[styles.container, { backgroundColor: colors.background }]}
+        entering={FadeIn.duration(600)}
+      >
         <View style={styles.emptyState}>
-          <Text style={[styles.emptyIcon]}>[ ]</Text>
+          <View style={[styles.emptyIconContainer, { backgroundColor: colors.primary + '15' }]}>
+            <Ionicons name="checkbox-outline" size={64} color={colors.primary} />
+          </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No tasks yet</Text>
           <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-            Add your first task or let the agent create one
+            Add your first task or let the AI agent create one for you
           </Text>
-          <TouchableOpacity
+          <AnimatedTouchableOpacity
             style={[styles.emptyButton, { backgroundColor: colors.primary }]}
             onPress={() => addTask({ title: 'My First Task' })}
+            entering={FadeIn.delay(400).duration(400)}
+            activeOpacity={0.8}
           >
+            <Ionicons name="add" size={24} color="#fff" />
             <Text style={styles.emptyButtonText}>Create Task</Text>
-          </TouchableOpacity>
+          </AnimatedTouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <Animated.View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={filteredTasks}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
-        renderItem={({ item }) => (
-          <TaskCard
-            task={item}
-            onPress={() => handleTaskPress(item)}
-            onToggleComplete={() => handleToggleComplete(item.id)}
-          />
+        renderItem={({ item, index }) => (
+          <Animated.View
+            entering={FadeInDown.delay(index * 50).duration(300)}
+            layout={Layout.springify()}
+          >
+            <TaskCard
+              task={item}
+              onPress={() => handleTaskPress(item)}
+              onToggleComplete={() => handleToggleComplete(item.id)}
+            />
+          </Animated.View>
         )}
-        ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
+        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={loadTasks} />
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={loadTasks}
+            tintColor={colors.primary}
+          />
         }
       />
 
@@ -176,54 +231,88 @@ export default function TaskBoardScreen() {
         onRemoveSubtask={removeSubtask}
         onRemoveAttachment={removeAttachment}
       />
-    </View>
+
+      {/* Floating Action Button */}
+      <AnimatedTouchableOpacity
+        style={[styles.fab, { backgroundColor: colors.primary }]}
+        onPress={() => addTask({ title: 'New Task' })}
+        entering={FadeIn.delay(800).duration(400)}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </AnimatedTouchableOpacity>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  listContent: { paddingBottom: 40 },
-  summaryRow: {
+  listContent: { paddingBottom: 100 },
+  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 12,
+    gap: 12,
+    borderBottomWidth: 1,
   },
-  summaryText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  addButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderRadius: 16,
+    gap: 4,
   },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 13,
+  statValue: {
+    fontSize: 20,
     fontWeight: '700',
   },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   overdueBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     marginHorizontal: 16,
-    marginVertical: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    marginVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
   overdueText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
+    flex: 1,
   },
   todaySection: {
     marginTop: 8,
+    paddingHorizontal: 16,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
   },
   sectionHeader: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
-    paddingHorizontal: 16,
-    marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -233,29 +322,58 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 40,
   },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
-    marginBottom: 8,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 20,
+    marginBottom: 32,
+    lineHeight: 24,
+    color: '#80868B',
   },
   emptyButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 16,
+    borderRadius: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   emptyButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 100,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
 });

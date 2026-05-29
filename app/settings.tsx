@@ -387,32 +387,46 @@ export default function SettingsScreen() {
               label="Telegram Bot Token"
               value={settings.telegramBotToken ? 'Configured' : 'Not set'}
               onPress={() => {
-                Alert.prompt
-                  ? Alert.prompt(
-                      'Bot Token',
-                      'Enter your Telegram Bot token from @BotFather',
-                      [(text: string) => text && updateSettings({ telegramBotToken: text })]
-                    )
-                  : Alert.alert(
-                      'Bot Token',
-                      'Enter your Telegram bot token in the backend environment variables.'
-                    );
+                Alert.prompt(
+                  'Bot Token',
+                  'Enter your Telegram Bot token from @BotFather',
+                  [
+                    {
+                      text: 'Cancel',
+                      style: 'cancel',
+                    },
+                    {
+                      text: 'OK',
+                      onPress: (text?: string) => {
+                        if (text) updateSettings({ telegramBotToken: text });
+                      },
+                    },
+                  ],
+                  'secure-text'
+                );
               }}
             />
             <SettingRow
               label="Telegram Chat ID"
               value={settings.telegramChatId || 'Not set'}
               onPress={() => {
-                Alert.prompt
-                  ? Alert.prompt(
-                      'Chat ID',
-                      'Enter your Telegram chat/user ID',
-                      [(text: string) => text && updateSettings({ telegramChatId: text })]
-                    )
-                  : Alert.alert(
-                      'Chat ID',
-                      'Set TELEGRAM_CHAT_ID in backend environment.'
-                    );
+                Alert.prompt(
+                  'Chat ID',
+                  'Enter your Telegram chat/user ID',
+                  [
+                    {
+                      text: 'Cancel',
+                      style: 'cancel',
+                    },
+                    {
+                      text: 'OK',
+                      onPress: (text?: string) => {
+                        if (text) updateSettings({ telegramChatId: text });
+                      },
+                    },
+                  ],
+                  'plain-text'
+                );
               }}
             />
           </>

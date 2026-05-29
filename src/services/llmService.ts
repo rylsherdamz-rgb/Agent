@@ -2,6 +2,8 @@ import { ConversationDB } from './database';
 import { ModelStorage } from './storage';
 import { AGENT_SYSTEM_PROMPT, DEFAULT_MODEL } from '../utils/constants';
 import { LlamaCpp } from '../../modules/llama-cpp/src';
+import { agentSkills } from './agentSkills';
+import { nlpSkills } from './nlpSkills';
 import type { AgentMessage, AgentConversation, ToolCall, ToolResult } from '../types';
 
 export interface LlamaInferenceOptions {
@@ -192,36 +194,14 @@ class LLMService {
 
   async executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
     try {
-      switch (toolCall.name) {
-        case 'create_task':
-          return {
-            toolCallId: toolCall.id,
-            result: 'Task created successfully.',
-            success: true,
-            error: null,
-          };
-        case 'list_tasks':
-          return {
-            toolCallId: toolCall.id,
-            result: 'Your tasks have been listed.',
-            success: true,
-            error: null,
-          };
-        case 'get_schedule':
-          return {
-            toolCallId: toolCall.id,
-            result: 'Schedule retrieved.',
-            success: true,
-            error: null,
-          };
-        default:
-          return {
-            toolCallId: toolCall.id,
-            result: `Executed ${toolCall.name} with arguments: ${JSON.stringify(toolCall.arguments)}`,
-            success: true,
-            error: null,
-          };
-      }
+      const result = await agentSkills.executeTool(toolCall.name, toolCall.arguments as Record<string, any>);
+      
+      return {
+        toolCallId: toolCall.id,
+        result: result.message,
+        success: result.success,
+        error: result.success ? null : result.message,
+      };
     } catch (err) {
       return {
         toolCallId: toolCall.id,

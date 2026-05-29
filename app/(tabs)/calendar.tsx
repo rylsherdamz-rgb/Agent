@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   useColorScheme,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/utils/colors';
 import { useCalendarStore } from '../../src/stores/calendarStore';
 import { CalendarAgendaView } from '../../src/components/CalendarAgendaView';
@@ -122,7 +123,7 @@ export default function CalendarScreen() {
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.navRow}>
           <TouchableOpacity onPress={navigateBack} style={styles.navButton}>
-            <Text style={[styles.navArrow, { color: colors.text }]}>{'<'}</Text>
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={goToToday}>
@@ -132,7 +133,7 @@ export default function CalendarScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={navigateForward} style={styles.navButton}>
-            <Text style={[styles.navArrow, { color: colors.text }]}>{'>'}</Text>
+            <Ionicons name="chevron-forward" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -165,7 +166,7 @@ export default function CalendarScreen() {
             style={[styles.addEventBtn, { backgroundColor: colors.primary }]}
             onPress={handleAddEvent}
           >
-            <Text style={styles.addEventBtnText}>+</Text>
+            <Ionicons name="add" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>

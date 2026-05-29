@@ -8,6 +8,7 @@ import {
   useColorScheme,
   TextInput,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../utils/colors';
 import { PRIORITY_COLORS, PRIORITY_LABELS } from '../utils/constants';
 import type { Task, TaskFilter } from '../types';
@@ -32,7 +33,7 @@ export function FilterBar({
   return (
     <View style={[styles.container, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
       <View style={[styles.searchRow, { backgroundColor: colors.surfaceVariant }]}>
-        <Text style={{ color: colors.textTertiary, fontSize: 16 }}>{'{?}'}</Text>
+        <Ionicons name="search-outline" size={18} color={colors.textTertiary} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
           value={filter.search}
@@ -42,7 +43,7 @@ export function FilterBar({
         />
         {filter.search ? (
           <TouchableOpacity onPress={() => onFilterChange({ search: '' })}>
-            <Text style={{ color: colors.textTertiary, fontSize: 14 }}>X</Text>
+            <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
           </TouchableOpacity>
         ) : null}
       </View>

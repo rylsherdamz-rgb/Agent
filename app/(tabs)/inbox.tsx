@@ -8,6 +8,7 @@ import {
   useColorScheme,
   RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/utils/colors';
 import { useInboxStore } from '../../src/stores/inboxStore';
 import { useTaskStore } from '../../src/stores/taskStore';
@@ -226,7 +227,7 @@ export default function InboxScreen() {
 
       {unifiedInbox.length === 0 && !isLoading ? (
         <View style={styles.emptyState}>
-          <Text style={{ fontSize: 40, marginBottom: 16 }}>i</Text>
+          <Ionicons name="mail-open-outline" size={40} color={colors.textTertiary} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
             Inbox is empty
           </Text>

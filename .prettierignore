@@ -1,0 +1,15 @@
+node_modules
+.expo
+.expo-shared
+dist
+web-build
+build
+*.log
+.DS_Store
+*.pem
+.env
+.env.local
+.env.*.local
+coverage
+.husky
+*.tgz

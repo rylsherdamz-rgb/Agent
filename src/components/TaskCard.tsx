@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   useColorScheme,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../utils/colors';
 import { PRIORITY_COLORS, PRIORITY_LABELS, STATUS_LABELS } from '../utils/constants';
 import type { Task } from '../types';
@@ -39,14 +40,10 @@ export function TaskCard({ task, onPress, onToggleComplete, compact }: TaskCardP
         activeOpacity={0.7}
       >
         <TouchableOpacity onPress={onToggleComplete} style={styles.checkbox}>
-          <View
-            style={[
-              styles.checkboxInner,
-              {
-                borderColor: isCompleted ? colors.success : colors.border,
-                backgroundColor: isCompleted ? colors.success : 'transparent',
-              },
-            ]}
+          <Ionicons
+            name={isCompleted ? 'checkbox' : 'square-outline'}
+            size={22}
+            color={isCompleted ? colors.success : colors.border}
           />
         </TouchableOpacity>
 
@@ -111,14 +108,10 @@ export function TaskCard({ task, onPress, onToggleComplete, compact }: TaskCardP
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={onToggleComplete} style={styles.checkbox}>
-          <View
-            style={[
-              styles.checkboxInner,
-              {
-                borderColor: isCompleted ? colors.success : colors.border,
-                backgroundColor: isCompleted ? colors.success : 'transparent',
-              },
-            ]}
+          <Ionicons
+            name={isCompleted ? 'checkbox' : 'square-outline'}
+            size={24}
+            color={isCompleted ? colors.success : colors.border}
           />
         </TouchableOpacity>
 
@@ -222,12 +215,7 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     padding: 2,
-  },
-  checkboxInner: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
+    paddingTop: 3,
   },
   content: {
     flex: 1,

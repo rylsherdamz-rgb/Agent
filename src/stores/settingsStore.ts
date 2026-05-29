@@ -65,6 +65,26 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
           modelDownloaded: modelInfo.downloaded,
         },
       }));
+    } else {
+      const fs = require('expo-file-system');
+      const modelPath = `${fs.documentDirectory}models/qwen2.5-1.5b-instruct-q4_k_m.gguf`;
+      fs.getInfoAsync(modelPath).then((info) => {
+        if (info.exists) {
+          ModelStorage.setModelInfo({
+            name: 'qwen2.5-1.5b-instruct-q4_k_m.gguf',
+            path: modelPath,
+            downloaded: true,
+          });
+          set((state) => ({
+            settings: {
+              ...state.settings,
+              modelDownloaded: true,
+              modelPath: modelPath,
+              modelName: 'qwen2.5-1.5b-instruct-q4_k_m.gguf',
+            },
+          }));
+        }
+      }).catch(console.error);
     }
   },
 
