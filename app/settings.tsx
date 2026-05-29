@@ -495,21 +495,30 @@ export default function SettingsScreen() {
 
         <SettingRow
           label="Model"
-          value={settings.modelDownloaded ? 'Qwen2-1.5B (downloaded)' : 'Not downloaded'}
+          value={settings.modelDownloaded ? 'Qwen2-1.5B (downloaded)' : 'Not loaded'}
         />
 
         {settings.modelDownloaded ? (
           <SettingRow label="Model Path" value={settings.modelPath || ''} />
-        ) : (
-          <TouchableOpacity
-            style={[styles.actionBtn, { borderColor: colors.border }]}
-            onPress={handleDownloadModel}
-          >
-            <Text style={[styles.actionBtnText, { color: colors.primary }]}>
-              Download Qwen2-1.5B GGUF (~1GB)
-            </Text>
-          </TouchableOpacity>
-        )}
+        ) : null}
+
+        <TouchableOpacity
+          style={[styles.actionBtn, { borderColor: colors.border }]}
+          onPress={() => router.push('/import-model')}
+        >
+          <Text style={[styles.actionBtnText, { color: colors.primary }]}>
+            Import GGUF Model
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionBtn, { borderColor: colors.border }]}
+          onPress={handleDownloadModel}
+        >
+          <Text style={[styles.actionBtnText, { color: colors.primary }]}>
+            Download Qwen2-1.5B GGUF (~1GB)
+          </Text>
+        </TouchableOpacity>
 
         <ToggleRow
           label="Offline AI Agent"

@@ -15,6 +15,9 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/utils/colors';
 import { useColorScheme } from 'react-native';
+import { router } from 'expo-router';
+import { LlamaCpp } from '../../modules/llama-cpp/src/index';
+import { useSettingsStore } from '../../src/stores/settingsStore';
 
 const MODEL_DIR = `${FileSystem.documentDirectory}models`;
 
@@ -22,6 +25,7 @@ export default function ImportModelScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = Colors[isDark ? 'dark' : 'light'];
+  const { setModelDownloaded } = useSettingsStore();
 
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
@@ -100,10 +104,46 @@ export default function ImportModelScreen() {
         await FileSystem.deleteAsync(destPath);
       }
 
+      setImportProgress(30);
+
       const copyResult = await FileSystem.copyAsync({
         from: file.uri,
         to: destPath,
       });
+
+      setImportProgress(70);
+
+      // Try to load the model with LlamaCpp
+      try {
+        const loaded = await LlamaCpp.loadModel(destPath);
+        if (loaded) {
+          setImportProgress(100);
+          // Update settings to mark model as downloaded
+          setModelDownloaded(destPath);
+          
+          setTimeout(() => {
+            setIsImporting(false);
+            setImportProgress(0);
+            setSelectedFile(null);
+            
+            Alert.alert(
+              'Success!',
+              `Model "${file.name}" has been imported and loaded successfully.\n\nThe model is ready to use with the offline AI agent.`,
+              [
+                {
+                  text: 'OK',
+                  onPress: () => router.back(),
+                },
+              ]
+            );
+          }, 500);
+          return;
+        }
+      } catch (loadError) {
+        console.warn('Model loaded in mock mode:', loadError);
+        // Even if native load fails (mock mode), still save the path
+        setModelDownloaded(destPath);
+      }
 
       setImportProgress(100);
       
@@ -114,8 +154,13 @@ export default function ImportModelScreen() {
         
         Alert.alert(
           'Success!',
-          `Model "${file.name}" has been imported successfully.\n\nYou can now use it with the LlamaCpp module.`,
-          [{ text: 'OK' }]
+          `Model "${file.name}" has been imported successfully.\n\nModel path: ${destPath}`,
+          [
+            {
+              text: 'OK',
+              onPress: () => router.back(),
+            },
+          ]
         );
       }, 500);
     } catch (error) {
