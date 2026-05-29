@@ -1,5 +1,9 @@
 # Ignore large model files
 data/models/*.gguf
+data/models/
+
+# Keep the models directory structure
+!data/models/.gitkeep
 
 # Ignore common development files
 .git
