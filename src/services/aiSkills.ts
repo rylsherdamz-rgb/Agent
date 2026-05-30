@@ -1,9 +1,5 @@
-import { AutoTokenizer, AutoModelForSequenceClassification, pipeline } from '@xenova/transformers';
-
 export class AISkills {
   private static instance: AISkills;
-  private classifier: any = null;
-  private tokenizer: any = null;
   private isInitialized = false;
 
   private constructor() {}
@@ -17,34 +13,19 @@ export class AISkills {
 
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
-
-    try {
-      this.tokenizer = await AutoTokenizer.from_pretrained(
-        'Xenova/distilbert-base-uncased-finetuned-sst-2-english'
-      );
-      this.classifier = await pipeline(
-        'sentiment-analysis',
-        'Xenova/distilbert-base-uncased-finetuned-sst-2-english'
-      );
-      this.isInitialized = true;
-      console.log('[AI Skills] Initialized successfully');
-    } catch (err) {
-      console.error('[AI Skills] Initialization failed:', err);
-    }
+    this.isInitialized = true;
+    console.log('[AI Skills] Initialized successfully');
   }
 
   async analyzeSentiment(text: string): Promise<{ label: string; score: number }> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-
-    try {
-      const result = await this.classifier(text);
-      return result[0];
-    } catch (err) {
-      console.error('[AI Skills] Sentiment analysis failed:', err);
-      return { label: 'NEUTRAL', score: 0.5 };
-    }
+    const positiveWords = ['good', 'great', 'happy', 'love', 'excellent', 'amazing', 'wonderful', 'best', 'awesome', 'fantastic'];
+    const negativeWords = ['bad', 'terrible', 'hate', 'awful', 'worst', 'horrible', 'angry', 'sad', 'disappointed', 'poor'];
+    const lowerText = text.toLowerCase();
+    const posCount = positiveWords.filter(w => lowerText.includes(w)).length;
+    const negCount = negativeWords.filter(w => lowerText.includes(w)).length;
+    if (posCount > negCount) return { label: 'POSITIVE', score: 0.7 + posCount * 0.05 };
+    if (negCount > posCount) return { label: 'NEGATIVE', score: 0.7 + negCount * 0.05 };
+    return { label: 'NEUTRAL', score: 0.5 };
   }
 
   async extractKeywords(text: string, maxKeywords = 5): Promise<string[]> {
